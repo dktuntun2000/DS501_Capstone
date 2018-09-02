@@ -58,30 +58,49 @@ df = pd.merge(df_play_u_song,df_down, on = ['uid','song_id'], how = 'outer')
 
 df.drop(['play_time','song_length'], axis = 1, inplace = True)
 
+df.head()
 
 # Compute implicit review score
 df['score'] = 0
 
-for i in range(len(df.play)):
-    
-    if df.download[i] >= 5:
-        df['score'][i] = 7
-    elif df.download[i] < 5 and df.download[i] >= 1 and df.play[i] > 0 :
-        df['score'][i] = 6
-    elif df.download[i] < 5 and df.download[i] >= 1 and np.isnan(df.play[i]):
-        df['score'][i] = 5
-    elif np.isnan(df.download[i]) and df.play[i] >= 0.8:
-        df['score'][i] = 4
-    elif np.isnan(df.download[i]) and df.play[i] >= 0.6 and df.play[i] < 0.8 :
-        df['score'][i] = 3
-    elif np.isnan(df.download[i]) and df.play[i] >= 0.3 and df.play[i] < 0.6 :
-        df['score'][i] = 2
-    else:
-        df['score'][i] = 1
-        
-df.drop(['play','download'], axis = 1, inplace = True)
 
-df_utility = pd.pivot_table(data=df, 
+def Rating(df):
+    
+    if df[0] >= 5:
+        return 7
+    
+    elif df[0] < 5 and df[0] >= 1 and df[1] > 0 :
+        return 6
+    
+    elif df[0] < 5 and df[0] >= 1 and np.isnan(df[1]):
+        return 5
+    
+    elif np.isnan(df[0]) and df[1] >= 0.8:
+        return 4
+    
+    elif np.isnan(df[0]) and df[1] >= 0.6 and df[1] < 0.8 :
+        return 3
+    
+    elif np.isnan(df[0]) and df[1] >= 0.3 and df[1] < 0.6 :
+        return 2
+    
+    else:
+        return 1    
+
+df.rename(columns = {'download':0, 'play': 1}, inplace = True)
+
+df['score'] = df[[0,1]].apply(Rating,axis = 1)
+
+    
+df.drop([0,1], axis = 1, inplace = True)
+
+
+## downsample the whold dataset
+
+df_final = df[np.random.random(df.shape) < 0.005]
+
+
+df_utility = pd.pivot_table(data=df_final, 
                             values='score', 
                             index='uid', 
                             columns='song_id', 
